@@ -35,10 +35,16 @@ app.get("/api/persons", (request, response) => {
   });
 });
 
-app.get("/api/persons/:id", (request, response) => {
-  Person.findById(request.params.id).then((note) => {
-    response.json(note);
-  });
+app.get("/api/persons/:id", (request, response, next) => {
+  Person.findById(request.params.id)
+    .then((person) => {
+      if (person) {
+        response.json(person);
+      } else {
+        response.status(404).end();
+      }
+    })
+    .catch((error) => next(error));
 });
 
 app.post("/api/persons", (request, response) => {
@@ -48,14 +54,6 @@ app.post("/api/persons", (request, response) => {
       error: "content missing",
     });
   }
-  // const check = persons.map((person) =>
-  //   person.name == body.name ? true : null
-  // );
-  // if (check.includes(true)) {
-  //   return response.status(400).json({
-  //     error: "name already exists in phonebook",
-  //   });
-  // }
 
   const person = new Person({
     name: body.name,
@@ -67,10 +65,24 @@ app.post("/api/persons", (request, response) => {
   });
 });
 
-app.delete("/api/persons/:id", (request, response) => {
-  const id = Number(request.params.id);
-  persons = persons.filter((person) => person.id !== id);
-  response.status(204).end();
+app.delete("/api/persons/:id", (request, response, next) => {
+  Person.findByIdAndRemove(request.params.id)
+    .then((result) => response.status(204).end())
+    .catch((error) => next(error));
+});
+
+app.put("/api/persons/:id", (request, response, next) => {
+  const body = request.body;
+  console.log(request.body);
+  const person = {
+    number: body.number,
+  };
+  Person.findByIdAndUpdate(request.params.id, person, { new: true })
+    .then((updatedPerson) => {
+      response.json(updatedPerson);
+      console.log("Db updated Successfully!");
+    })
+    .catch((error) => next(error));
 });
 
 const PORT = process.env.PORT;
